@@ -1,0 +1,27 @@
+# Archivos locales de Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+crash.log
+
+# Variables de entorno
+.env
+*.tfvars
+*.tfvars.json
+
+# Archivos de registro
+*.log
+
+# Archivos de respaldo de editores
+*~
+.*.swp
+.*.swo
+*.bak
+*.backup
+*.tmp
+
+# Directorios de IDE
+.idea/
+.vscode/
+*.iml
