@@ -5,12 +5,12 @@ pipeline {
         // Definir variables de entorno para el pipeline
         DOCKER_HOST = "npipe:////.//pipe//docker_engine"  // Conexión local para Docker Desktop en Windows
     }
-    
-    parameters {
+      parameters {
         choice(name: 'TERRAFORM_ACTION', choices: ['plan', 'apply', 'destroy'], description: 'Acción a ejecutar en Terraform')
         string(name: 'CONTAINER_NAME', defaultValue: 'terraform-docker-demo', description: 'Nombre del contenedor Docker')
         string(name: 'EXTERNAL_PORT', defaultValue: '8000', description: 'Puerto externo para mapear al contenedor')
         string(name: 'IMAGE_NAME', defaultValue: 'nginx:latest', description: 'Nombre de la imagen Docker a utilizar')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Entorno a desplegar')
     }
     
     stages {
@@ -20,8 +20,7 @@ pipeline {
                 checkout scm
             }
         }
-        
-        // Ejecuta Terraform dentro de un contenedor Docker de Windows
+          // Ejecuta Terraform dentro de un contenedor Docker de Windows
         stage('Terraform Run') {
             steps {
                 script {
@@ -30,7 +29,7 @@ pipeline {
                     
                     // Ejecutar el contenedor de Terraform y el comando dentro de él
                     bat """
-                    docker run --rm -v ${workspaceDir}:C:/workspace -w C:/workspace mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019 powershell -Command "
+                    docker run --rm -v ${workspaceDir}:C:/workspace -w C:/workspace/environments/${params.ENVIRONMENT} mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019 powershell -Command "
                         # Descargar e instalar Terraform
                         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                         Invoke-WebRequest -Uri https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_windows_amd64.zip -OutFile terraform.zip
@@ -43,7 +42,9 @@ pipeline {
                             .\\terraform.exe plan -out=tfplan -var='container_name=${params.CONTAINER_NAME}' -var='external_port=${params.EXTERNAL_PORT}' -var='image_name=${params.IMAGE_NAME}'
                         } elseif ('${params.TERRAFORM_ACTION}' -eq 'apply') {
                             .\\terraform.exe init
-                            .\\terraform.exe apply -auto-approve -var='container_name=${params.CONTAINER_NAME}' -var='external_port=${params.EXTERNAL_PORT}' -var='image_name=${params.IMAGE_NAME}'
+                            .\\terraform.exe validate
+                            .\\terraform.exe plan -out=tfplan -var='container_name=${params.CONTAINER_NAME}' -var='external_port=${params.EXTERNAL_PORT}' -var='image_name=${params.IMAGE_NAME}'
+                            .\\terraform.exe apply -auto-approve tfplan
                         } elseif ('${params.TERRAFORM_ACTION}' -eq 'destroy') {
                             .\\terraform.exe init
                             .\\terraform.exe destroy -auto-approve -var='container_name=${params.CONTAINER_NAME}' -var='external_port=${params.EXTERNAL_PORT}' -var='image_name=${params.IMAGE_NAME}'
@@ -54,11 +55,10 @@ pipeline {
             }
         }
     }
-    
-    post {
+      post {
         always {
-            // Limpiar el espacio de trabajo
-            cleanWs()
+            // Limpiar el espacio de trabajo, excepto los archivos de estado de Terraform
+            cleanWs(patterns: [[pattern: 'environments/**/terraform.tfstate*', type: 'EXCLUDE']])
         }
         success {
             echo 'Pipeline ejecutado correctamente'

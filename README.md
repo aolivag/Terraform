@@ -11,11 +11,16 @@ Este proyecto demuestra cómo usar Terraform para administrar recursos de Docker
 
 ```
 .
+├── Jenkinsfile                   # Pipeline principal de Jenkins para Terraform
+├── Jenkinsfile.full              # Pipeline avanzado con más validaciones
 ├── ci/                           # Archivos de integración continua
-│   ├── Jenkinsfile               # Pipeline de Jenkins para Terraform
+│   ├── Jenkinsfile               # Copia de referencia del pipeline principal
+│   ├── Jenkinsfile.full          # Pipeline con etapas adicionales
 │   ├── Jenkinsfile.docker        # Pipeline de Jenkins usando Docker
 │   ├── Jenkinsfile.windows       # Pipeline adaptado para Windows
+│   ├── Jenkinsfile.docker-windows # Pipeline para Docker en Windows
 │   ├── jenkins.env               # Variables de entorno para Jenkins
+│   ├── jenkins.config            # Configuración centralizada para Jenkins
 │   └── terraform-jenkins-deploy.yaml # Plantilla CloudFormation para integración AWS
 ├── docs/                         # Documentación detallada del proyecto
 ├── environments/                 # Configuraciones específicas por ambiente
@@ -26,9 +31,6 @@ Este proyecto demuestra cómo usar Terraform para administrar recursos de Docker
 │       ├── main.tf               # Configuración principal del módulo Docker
 │       ├── variables.tf          # Definiciones de variables del módulo
 │       └── outputs.tf            # Definiciones de salidas del módulo
-├── scripts/                      # Scripts de automatización
-│   ├── deploy.ps1                # Script para despliegue local
-│   └── jenkins-terraform.ps1     # Script PowerShell para Jenkins
 └── README.md                     # Este archivo
 ```
 
@@ -90,45 +92,36 @@ Este proyecto incluye archivos de configuración para integrarse con Jenkins, pe
    - Plugin de Pipeline instalado
    - Plugin de Docker instalado (si usas `Jenkinsfile.docker`)
    - Terraform instalado en el agente Jenkins y disponible en el PATH
-   - Para entornos Windows, usa `Jenkinsfile.windows` o el `Jenkinsfile` actualizado
 
 2. **Crear un nuevo pipeline en Jenkins**:
    - Crea un nuevo elemento de tipo Pipeline
    - En la sección "Pipeline", selecciona "Pipeline script from SCM"
    - Selecciona Git como SCM
    - Ingresa la URL de tu repositorio
-   - Para Windows, tienes tres opciones: 
-     - **Recomendado**: Usar "Jenkinsfile" (basado en PowerShell) adaptado para Windows
-     - Usar "Jenkinsfile.docker-windows" si necesitas ejecutar en un contenedor Windows
-     - Usar "Jenkinsfile.docker" para entornos donde Docker funciona correctamente con Jenkins
+   - Opciones para diferentes entornos:
+     - **Estándar**: Usar "Jenkinsfile" en la raíz del repositorio (para compatibilidad con Jenkins)
+     - **Docker Windows**: Usar "ci/Jenkinsfile.docker-windows" si necesitas ejecutar en un contenedor Windows
+     - **Docker**: Usar "ci/Jenkinsfile.docker" para entornos donde Docker funciona correctamente
 
-3. **Variables de entorno**:
-   - Puedes cargar las variables del archivo `jenkins.env` en la configuración de Jenkins
+3. **Parámetros del pipeline**:
+   - `TERRAFORM_ACTION`: Acción a ejecutar (plan, apply, destroy)
+   - `CONTAINER_NAME`: Nombre del contenedor Docker
+   - `EXTERNAL_PORT`: Puerto externo para mapear
+   - `IMAGE_NAME`: Nombre de la imagen Docker
+   - `ENVIRONMENT`: Ambiente a desplegar (dev, prod)
 
-### Ejecución manual desde PowerShell
-
-También puedes ejecutar el script de PowerShell directamente (recomendado para entornos Windows):
-
-```powershell
-.\scripts\jenkins-terraform.ps1 -Action apply -ContainerName webapp -ExternalPort 8080 -ImageName nginx:alpine
-```
-
-O utilizar el script de despliegue local:
-
-```powershell
-.\scripts\deploy.ps1 -Environment dev -Action apply
-```
+4. **Variables de entorno**:
+   - Puedes cargar las variables del archivo `ci/jenkins.env` en la configuración de Jenkins
 
 ### Solución a errores comunes en Windows
 
-- Si encuentras el error "Cannot run program 'sh'", esto puede ocurrir por varios motivos:
-  1. **Usando el Jenkinsfile equivocado**: Asegúrate de usar el Jenkinsfile adaptado para Windows (con comandos `bat` o `powershell` en lugar de `sh`)
-  2. **Agente Docker en Windows**: Si estás usando un agente Docker dentro de Jenkins en Windows, necesitarás:
-     - Usar "Jenkinsfile.docker-windows" específicamente creado para este escenario
-     - O usar "Jenkinsfile" actual que no intenta utilizar Docker como agente
-  3. **Problemas de PATH**: Asegúrate de que el PATH incluya la ruta a Terraform correctamente con separador ';' en lugar de ':'
+- Si encuentras el error "Cannot run program 'sh'":
+  1. **Verificar comandos**: Asegúrate de que el Jenkinsfile utiliza comandos `bat` en lugar de `sh` para Windows
+  2. **Agente Docker en Windows**: Si estás usando Docker dentro de Jenkins en Windows:
+     - Usa "ci/Jenkinsfile.docker-windows" específicamente creado para este escenario
+  3. **Problemas de PATH**: Asegúrate de que el PATH incluye la ruta a Terraform correctamente
 - En los comandos de línea continua en Windows, usa el carácter `^` en lugar de `\`
-- Si sigues teniendo problemas, considera ejecutar Jenkins en un contenedor Docker basado en Linux
+- Si hay problemas con los permisos de Terraform, verifica que el usuario de Jenkins tiene acceso a ejecutar los comandos
 
 ### Integración con AWS Lambda
 

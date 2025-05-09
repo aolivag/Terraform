@@ -4,10 +4,15 @@ Esta guía proporciona detalles sobre cómo integrar este proyecto Terraform con
 
 ## Archivos de configuración
 
-- `ci/Jenkinsfile`: Pipeline estándar para Jenkins, adaptado para Windows
+- `Jenkinsfile` (raíz): Pipeline principal de Jenkins para compatibilidad directa
+- `Jenkinsfile.full` (raíz): Pipeline avanzado con más etapas y validaciones
+- `ci/Jenkinsfile`: Copia de referencia del pipeline principal
+- `ci/Jenkinsfile.full`: Pipeline avanzado con etapas adicionales
 - `ci/Jenkinsfile.docker`: Pipeline que utiliza Docker como agente
 - `ci/Jenkinsfile.windows`: Pipeline específico para entornos Windows
+- `ci/Jenkinsfile.docker-windows`: Pipeline para ejecutar en contenedor Docker en Windows
 - `ci/jenkins.env`: Variables de entorno para Jenkins
+- `ci/jenkins.config`: Archivo de configuración con parámetros predeterminados
 - `ci/terraform-jenkins-deploy.yaml`: Plantilla CloudFormation para integración AWS
 
 ## Requisitos previos
@@ -30,10 +35,12 @@ Esta guía proporciona detalles sobre cómo integrar este proyecto Terraform con
 3. Configurar el origen como SCM Git
 4. Especificar el repositorio y las credenciales
 5. Elegir la rama adecuada
-6. En "Script Path", especificar uno de los siguientes (según tus necesidades):
-   - `ci/Jenkinsfile` (por defecto)
-   - `ci/Jenkinsfile.windows` (para Windows)
-   - `ci/Jenkinsfile.docker` (si usas Docker)
+6. En "Script Path", usar:
+   - `Jenkinsfile` (por defecto, en la raíz del repositorio, pipeline básico)
+   - `Jenkinsfile.full` (pipeline avanzado con más validaciones y etapas)
+   - O especificar una ruta alternativa para casos especiales:
+     - `ci/Jenkinsfile.docker` (si quieres usar Docker)
+     - `ci/Jenkinsfile.docker-windows` (para Docker en Windows)
 
 ### Configuración de parámetros
 
@@ -43,6 +50,7 @@ El pipeline está configurado para aceptar los siguientes parámetros:
 - `CONTAINER_NAME`: Nombre del contenedor Docker
 - `EXTERNAL_PORT`: Puerto externo para mapear 
 - `IMAGE_NAME`: Nombre de la imagen Docker a utilizar
+- `ENVIRONMENT`: Entorno a desplegar (dev, prod)
 
 ### Variables de entorno
 
@@ -74,4 +82,6 @@ Si usas Docker en Windows con Jenkins:
 
 1. Verifica que Terraform está instalado y disponible en el PATH
 2. Asegúrate de que Jenkins tiene permisos para ejecutar Terraform
-3. Prueba ejecutar el script PowerShell manualmente: `.\scripts\jenkins-terraform.ps1`
+3. Verifica que la herramienta Terraform está correctamente configurada en Jenkins:
+   - En Jenkins, ve a "Administrar Jenkins" > "Global Tool Configuration"
+   - Configura Terraform con el nombre 'terraform' para que coincida con el usado en los pipelines

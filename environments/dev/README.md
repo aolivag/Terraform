@@ -32,7 +32,5 @@ terraform apply -var="container_name=mi-app-dev" -var="external_port=8080"
 
 ## Integración con Jenkins
 
-Este ambiente puede ser desplegado automáticamente usando el pipeline de Jenkins:
-```powershell
-.\scripts\jenkins-terraform.ps1 -Action apply -Environment dev
-```
+Este ambiente puede ser desplegado automáticamente usando el pipeline de Jenkins. 
+Configura el parámetro ENVIRONMENT como "dev" al ejecutar el pipeline.

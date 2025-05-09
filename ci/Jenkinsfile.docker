@@ -7,12 +7,12 @@ pipeline {
         TERRAFORM_HOME = tool 'terraform'
         PATH = "${env.TERRAFORM_HOME};${env.PATH}"  // Separador de ruta en Windows es punto y coma
     }
-    
-    parameters {
+      parameters {
         choice(name: 'TERRAFORM_ACTION', choices: ['plan', 'apply', 'destroy'], description: 'Acción a ejecutar en Terraform')
         string(name: 'CONTAINER_NAME', defaultValue: 'terraform-docker-demo', description: 'Nombre del contenedor Docker')
         string(name: 'EXTERNAL_PORT', defaultValue: '8000', description: 'Puerto externo para mapear al contenedor')
         string(name: 'IMAGE_NAME', defaultValue: 'nginx:latest', description: 'Nombre de la imagen Docker a utilizar')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Entorno a desplegar')
     }
     
     stages {
@@ -22,7 +22,7 @@ pipeline {
             }
         }        stage('Terraform Init') {
             steps {
-                dir('environments/dev') {
+                dir("environments/${params.ENVIRONMENT}") {
                     bat 'terraform init'
                 }
             }
@@ -30,13 +30,13 @@ pipeline {
         
         stage('Terraform Validate') {
             steps {
-                dir('environments/dev') {
+                dir("environments/${params.ENVIRONMENT}") {
                     bat 'terraform validate'
                 }
             }
         }          stage('Terraform Plan') {
             steps {
-                dir('environments/dev') {
+                dir("environments/${params.ENVIRONMENT}") {
                     bat """
                     terraform plan -out=tfplan ^
                         -var="container_name=${params.CONTAINER_NAME}" ^
@@ -49,9 +49,9 @@ pipeline {
           stage('Terraform Apply/Destroy') {
             when {
                 expression { params.TERRAFORM_ACTION == 'apply' || params.TERRAFORM_ACTION == 'destroy' }
-            }
-            steps {                script {
-                    dir('environments/dev') {
+            }            steps {                
+                script {
+                    dir("environments/${params.ENVIRONMENT}") {
                         if (params.TERRAFORM_ACTION == 'apply') {
                             bat 'terraform apply -auto-approve tfplan'
                         } else if (params.TERRAFORM_ACTION == 'destroy') {
@@ -67,11 +67,17 @@ pipeline {
             }
         }
     }
-    
-    post {
+      post {
         always {
-            archiveArtifacts artifacts: 'tfplan', allowEmptyArchive: true
-            cleanWs()
+            archiveArtifacts artifacts: "environments/${params.ENVIRONMENT}/tfplan", allowEmptyArchive: true
+            // Limpiar el espacio de trabajo, excepto los archivos de estado de Terraform
+            cleanWs(patterns: [[pattern: 'environments/**/terraform.tfstate*', type: 'EXCLUDE']])
+        }
+        success {
+            echo 'Pipeline ejecutado correctamente'
+        }
+        failure {
+            echo 'Pipeline fallido'
         }
     }
 }

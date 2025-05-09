@@ -32,10 +32,8 @@ terraform apply -var="container_name=mi-app-prod" -var="external_port=80"
 
 ## Integración con Jenkins
 
-Este ambiente puede ser desplegado automáticamente usando el pipeline de Jenkins:
-```powershell
-.\scripts\jenkins-terraform.ps1 -Action apply -Environment prod
-```
+Este ambiente puede ser desplegado automáticamente usando el pipeline de Jenkins.
+Configura el parámetro ENVIRONMENT como "prod" al ejecutar el pipeline.
 
 ## Consideraciones para producción
 

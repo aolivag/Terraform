@@ -1,11 +1,18 @@
 pipeline {
     agent any
     
+    environment {
+        // Definir variables de entorno para el pipeline
+        TERRAFORM_HOME = tool 'terraform'
+        PATH = "${env.TERRAFORM_HOME};${env.PATH}"  // Separador de ruta en Windows es punto y coma
+    }
+    
     parameters {
         choice(name: 'TERRAFORM_ACTION', choices: ['plan', 'apply', 'destroy'], description: 'Acción a ejecutar en Terraform')
         string(name: 'CONTAINER_NAME', defaultValue: 'terraform-docker-demo', description: 'Nombre del contenedor Docker')
         string(name: 'EXTERNAL_PORT', defaultValue: '8000', description: 'Puerto externo para mapear al contenedor')
         string(name: 'IMAGE_NAME', defaultValue: 'nginx:latest', description: 'Nombre de la imagen Docker a utilizar')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Entorno a desplegar')
     }
     
     stages {
@@ -16,19 +23,69 @@ pipeline {
             }
         }
         
-        stage('Execute PowerShell Script') {            steps {
-                // Ejecutar script PowerShell personalizado
-                powershell """
-                .\\scripts\\jenkins-terraform.ps1 -Action ${params.TERRAFORM_ACTION} -ContainerName ${params.CONTAINER_NAME} -ExternalPort ${params.EXTERNAL_PORT} -ImageName ${params.IMAGE_NAME} -Environment "dev"
-                """
+        stage('Terraform Init') {
+            steps {
+                dir("environments/${params.ENVIRONMENT}") {
+                    bat 'terraform init'
+                }
+            }
+        }
+        
+        stage('Terraform Validate') {
+            steps {
+                dir("environments/${params.ENVIRONMENT}") {
+                    bat 'terraform validate'
+                }
+            }
+        }
+        
+        stage('Terraform Plan') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'plan' || params.TERRAFORM_ACTION == 'apply' }
+            }
+            steps {
+                dir("environments/${params.ENVIRONMENT}") {
+                    bat """
+                    terraform plan -out=tfplan ^
+                        -var="container_name=${params.CONTAINER_NAME}" ^
+                        -var="external_port=${params.EXTERNAL_PORT}" ^
+                        -var="image_name=${params.IMAGE_NAME}"
+                    """
+                }
+            }        }
+        
+        stage('Terraform Apply') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'apply' }
+            }
+            steps {
+                dir("environments/${params.ENVIRONMENT}") {
+                    bat 'terraform apply -auto-approve tfplan'
+                }
+            }
+        }
+        
+        stage('Terraform Destroy') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'destroy' }
+            }
+            steps {
+                dir("environments/${params.ENVIRONMENT}") {
+                    bat """
+                    terraform destroy -auto-approve ^
+                        -var="container_name=${params.CONTAINER_NAME}" ^
+                        -var="external_port=${params.EXTERNAL_PORT}" ^
+                        -var="image_name=${params.IMAGE_NAME}"
+                    """
+                }
             }
         }
     }
     
     post {
         always {
-            // Limpiar el espacio de trabajo
-            cleanWs()
+            // Limpiar el espacio de trabajo, excepto los archivos de estado de Terraform
+            cleanWs(patterns: [[pattern: 'environments/**/terraform.tfstate*', type: 'EXCLUDE']])
         }
         success {
             echo 'Pipeline ejecutado correctamente'
