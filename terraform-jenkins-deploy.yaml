@@ -1,0 +1,123 @@
+# terraform-jenkins-deploy.yaml
+# Esta configuración define una Lambda para gestionar la integración entre Jenkins y Terraform
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Automatizar despliegues de Terraform desde Jenkins'
+
+Parameters:
+  JenkinsURL:
+    Type: String
+    Description: 'URL del servidor Jenkins'
+    Default: 'http://jenkins.example.com'
+  
+  JenkinsCredentialsID:
+    Type: String
+    Description: 'ID de credenciales en Jenkins para API'
+    Default: 'jenkins-api-token'
+  
+  TerraformJobName:
+    Type: String
+    Description: 'Nombre del trabajo de Jenkins para Terraform'
+    Default: 'TerraformDeploy'
+
+Resources:
+  TerraformDeployRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+
+  TerraformDeployFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Role: !GetAtt TerraformDeployRole.Arn
+      Code:
+        ZipFile: |
+          const https = require('https');
+          const url = require('url');
+          
+          exports.handler = async (event) => {
+              // Configuración
+              const jenkinsUrl = process.env.JENKINS_URL;
+              const jobName = process.env.JOB_NAME;
+              const apiToken = process.env.JENKINS_API_TOKEN;
+              
+              // Parámetros para Terraform
+              const terraformAction = event.action || 'plan';
+              const containerName = event.container_name || 'terraform-docker-demo';
+              const externalPort = event.external_port || '8000';
+              const imageName = event.image_name || 'nginx:latest';
+              
+              // Construir la URL para iniciar el trabajo de Jenkins
+              const buildParams = [
+                  `TERRAFORM_ACTION=${terraformAction}`,
+                  `CONTAINER_NAME=${containerName}`,
+                  `EXTERNAL_PORT=${externalPort}`,
+                  `IMAGE_NAME=${imageName}`
+              ].join('&');
+              
+              const buildUrl = `${jenkinsUrl}/job/${jobName}/buildWithParameters?${buildParams}`;
+              const parsedUrl = url.parse(buildUrl);
+              
+              // Configurar la solicitud HTTP
+              const options = {
+                  hostname: parsedUrl.hostname,
+                  port: parsedUrl.port || 443,
+                  path: parsedUrl.path,
+                  method: 'POST',
+                  auth: `jenkins:${apiToken}`
+              };
+              
+              // Realizar la solicitud
+              return new Promise((resolve, reject) => {
+                  const req = https.request(options, (res) => {
+                      console.log(`StatusCode: ${res.statusCode}`);
+                      
+                      let responseBody = '';
+                      res.on('data', (chunk) => {
+                          responseBody += chunk;
+                      });
+                      
+                      res.on('end', () => {
+                          resolve({
+                              statusCode: res.statusCode,
+                              body: responseBody || 'Build initiated'
+                          });
+                      });
+                  });
+                  
+                  req.on('error', (error) => {
+                      console.error('Error:', error);
+                      reject(error);
+                  });
+                  
+                  req.end();
+              });
+          };
+      Environment:
+        Variables:
+          JENKINS_URL: !Ref JenkinsURL
+          JOB_NAME: !Ref TerraformJobName
+          JENKINS_API_TOKEN: !Ref JenkinsCredentialsID
+      Timeout: 30
+      
+  TerraformDeployPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref TerraformDeployFunction
+      Principal: 'apigateway.amazonaws.com'
+
+Outputs:
+  TerraformDeployFunctionArn:
+    Description: 'ARN de la función Lambda'
+    Value: !GetAtt TerraformDeployFunction.Arn
