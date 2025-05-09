@@ -1,10 +1,11 @@
 pipeline {
-    agent {
-        docker {
-            image 'hashicorp/terraform:latest'
-            args '-v ${WORKSPACE}:/workspace -w /workspace'
-            reuseNode true  // Permite reutilizar el nodo de Jenkins
-        }
+    // Usar el agente estándar de Jenkins en lugar de Docker
+    agent any
+    
+    environment {
+        // Definir variables de entorno para el pipeline
+        TERRAFORM_HOME = tool 'terraform'
+        PATH = "${env.TERRAFORM_HOME};${env.PATH}"  // Separador de ruta en Windows es punto y coma
     }
     
     parameters {

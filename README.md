@@ -76,9 +76,10 @@ Este proyecto incluye archivos de configuración para integrarse con Jenkins, pe
    - En la sección "Pipeline", selecciona "Pipeline script from SCM"
    - Selecciona Git como SCM
    - Ingresa la URL de tu repositorio
-   - Para Windows: 
-     - Usar "Jenkinsfile.windows" como ruta del script (basado en PowerShell)
-     - O usar "Jenkinsfile" que ha sido adaptado para usar comandos `bat` en lugar de `sh`
+   - Para Windows, tienes tres opciones: 
+     - **Recomendado**: Usar "Jenkinsfile" (basado en PowerShell) adaptado para Windows
+     - Usar "Jenkinsfile.docker-windows" si necesitas ejecutar en un contenedor Windows
+     - Usar "Jenkinsfile.docker" para entornos donde Docker funciona correctamente con Jenkins
 
 3. **Variables de entorno**:
    - Puedes cargar las variables del archivo `jenkins.env` en la configuración de Jenkins
@@ -93,9 +94,14 @@ También puedes ejecutar el script de PowerShell directamente (recomendado para 
 
 ### Solución a errores comunes en Windows
 
-- Si encuentras el error "Cannot run program 'sh'", asegúrate de usar el Jenkinsfile adaptado para Windows (con comandos `bat` o `powershell` en lugar de `sh`)
-- Asegúrate de que el PATH incluya la ruta a Terraform correctamente con separador ';' en lugar de ':'
+- Si encuentras el error "Cannot run program 'sh'", esto puede ocurrir por varios motivos:
+  1. **Usando el Jenkinsfile equivocado**: Asegúrate de usar el Jenkinsfile adaptado para Windows (con comandos `bat` o `powershell` en lugar de `sh`)
+  2. **Agente Docker en Windows**: Si estás usando un agente Docker dentro de Jenkins en Windows, necesitarás:
+     - Usar "Jenkinsfile.docker-windows" específicamente creado para este escenario
+     - O usar "Jenkinsfile" actual que no intenta utilizar Docker como agente
+  3. **Problemas de PATH**: Asegúrate de que el PATH incluya la ruta a Terraform correctamente con separador ';' en lugar de ':'
 - En los comandos de línea continua en Windows, usa el carácter `^` en lugar de `\`
+- Si sigues teniendo problemas, considera ejecutar Jenkins en un contenedor Docker basado en Linux
 
 ### Integración con AWS Lambda
 
