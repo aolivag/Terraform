@@ -44,8 +44,7 @@ pipeline {
                     -var="image_name=${params.IMAGE_NAME}"
                 """
             }
-        }
-          stage('Terraform Apply/Destroy') {
+        }        stage('Terraform Apply/Destroy') {
             when {
                 expression { params.TERRAFORM_ACTION == 'apply' || params.TERRAFORM_ACTION == 'destroy' }
             }
