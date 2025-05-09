@@ -1,0 +1,11 @@
+# Ejemplo de archivo terraform.tfvars para configuración personalizada
+# Copia este archivo a terraform.tfvars y modifica los valores según tus necesidades
+
+# Nombre del contenedor Docker
+container_name = "terraform-docker-prod"
+
+# Puerto externo para mapear al contenedor
+external_port = 80
+
+# Imagen Docker a utilizar
+image_name = "nginx:stable"
