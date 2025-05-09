@@ -17,10 +17,9 @@ pipeline {
         }
         
         stage('Execute PowerShell Script') {
-            steps {
-                // Ejecutar script PowerShell personalizado
+            steps {                // Ejecutar script PowerShell personalizado
                 powershell """
-                .\\jenkins-terraform.ps1 -Action ${params.TERRAFORM_ACTION} -ContainerName ${params.CONTAINER_NAME} -ExternalPort ${params.EXTERNAL_PORT} -ImageName ${params.IMAGE_NAME}
+                .\\scripts\\jenkins-terraform.ps1 -Action ${params.TERRAFORM_ACTION} -ContainerName ${params.CONTAINER_NAME} -ExternalPort ${params.EXTERNAL_PORT} -ImageName ${params.IMAGE_NAME} -Environment "dev"
                 """
             }
         }

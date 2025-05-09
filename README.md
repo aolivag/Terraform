@@ -11,39 +11,58 @@ Este proyecto demuestra cómo usar Terraform para administrar recursos de Docker
 
 ```
 .
-├── main.tf                       # Configuración principal de Terraform
-├── variables.tf                  # Definiciones de variables
-├── outputs.tf                    # Definiciones de salidas
-├── versions.tf                   # Requisitos de versión de Terraform
-├── Jenkinsfile                   # Pipeline de Jenkins para Terraform
-├── Jenkinsfile.docker            # Pipeline de Jenkins usando Docker
-├── jenkins-terraform.ps1         # Script PowerShell para Jenkins
-├── jenkins.env                   # Variables de entorno para Jenkins
-├── terraform-jenkins-deploy.yaml # Plantilla CloudFormation para integración AWS
+├── ci/                           # Archivos de integración continua
+│   ├── Jenkinsfile               # Pipeline de Jenkins para Terraform
+│   ├── Jenkinsfile.docker        # Pipeline de Jenkins usando Docker
+│   ├── Jenkinsfile.windows       # Pipeline adaptado para Windows
+│   ├── jenkins.env               # Variables de entorno para Jenkins
+│   └── terraform-jenkins-deploy.yaml # Plantilla CloudFormation para integración AWS
+├── docs/                         # Documentación detallada del proyecto
+├── environments/                 # Configuraciones específicas por ambiente
+│   ├── dev/                      # Ambiente de desarrollo
+│   └── prod/                     # Ambiente de producción
+├── modules/                      # Módulos reutilizables de Terraform
+│   └── docker/                   # Módulo para gestionar contenedores Docker
+│       ├── main.tf               # Configuración principal del módulo Docker
+│       ├── variables.tf          # Definiciones de variables del módulo
+│       └── outputs.tf            # Definiciones de salidas del módulo
+├── scripts/                      # Scripts de automatización
+│   ├── deploy.ps1                # Script para despliegue local
+│   └── jenkins-terraform.ps1     # Script PowerShell para Jenkins
 └── README.md                     # Este archivo
 ```
 
 ## Inicialización y uso
 
-1. Inicializar el proyecto Terraform:
+### Enfoque modular (recomendado)
+
+1. Navega al directorio del ambiente que deseas utilizar:
+
+```powershell
+cd environments/dev  # Para ambiente de desarrollo
+# o
+cd environments/prod # Para ambiente de producción
+```
+
+2. Inicializar el proyecto Terraform:
 
 ```powershell
 terraform init
 ```
 
-2. Ver el plan de ejecución:
+3. Ver el plan de ejecución:
 
 ```powershell
 terraform plan
 ```
 
-3. Aplicar la configuración:
+4. Aplicar la configuración:
 
 ```powershell
 terraform apply
 ```
 
-4. Cuando ya no necesites los recursos, puedes destruirlos:
+5. Cuando ya no necesites los recursos, puedes destruirlos:
 
 ```powershell
 terraform destroy
@@ -89,7 +108,13 @@ Este proyecto incluye archivos de configuración para integrarse con Jenkins, pe
 También puedes ejecutar el script de PowerShell directamente (recomendado para entornos Windows):
 
 ```powershell
-.\jenkins-terraform.ps1 -Action apply -ContainerName webapp -ExternalPort 8080 -ImageName nginx:alpine
+.\scripts\jenkins-terraform.ps1 -Action apply -ContainerName webapp -ExternalPort 8080 -ImageName nginx:alpine
+```
+
+O utilizar el script de despliegue local:
+
+```powershell
+.\scripts\deploy.ps1 -Environment dev -Action apply
 ```
 
 ### Solución a errores comunes en Windows

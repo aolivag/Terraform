@@ -5,7 +5,8 @@ param(
     [string]$Action = "plan",
     [string]$ContainerName = "terraform-docker-demo",
     [int]$ExternalPort = 8000,
-    [string]$ImageName = "nginx:latest"
+    [string]$ImageName = "nginx:latest",
+    [string]$Environment = "dev"
 )
 
 Write-Host "Ejecutando Terraform $Action en Jenkins..." -ForegroundColor Cyan
@@ -29,6 +30,12 @@ catch {
     Write-Host "Advertencia: Docker no está disponible o no está en ejecución" -ForegroundColor Yellow
     Write-Host "Asegúrate de que Docker esté instalado y en ejecución en el agente de Jenkins" -ForegroundColor Yellow
 }
+
+# Establecer directorio de trabajo según el entorno
+$workingDir = "../environments/$Environment"
+Set-Location -Path $workingDir
+
+Write-Host "Trabajando en el directorio: $((Get-Location).Path)" -ForegroundColor Yellow
 
 # Inicializar Terraform
 Write-Host "Inicializando Terraform..." -ForegroundColor Cyan
