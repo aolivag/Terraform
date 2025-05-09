@@ -82,6 +82,8 @@ También puedes crear un archivo `terraform.tfvars` para establecer valores pers
 
 Este proyecto incluye archivos de configuración para integrarse con Jenkins, permitiendo automatizar el despliegue de la infraestructura.
 
+> **Nota importante**: El archivo Jenkinsfile principal se encuentra en la raíz del proyecto para compatibilidad con Jenkins. Los archivos de configuración adicionales están en la carpeta `ci/`.
+
 ### Configuración en Jenkins (Windows)
 
 1. **Requisitos en Jenkins**:
