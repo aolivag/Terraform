@@ -98,10 +98,21 @@ También puedes ejecutar el script de PowerShell directamente (recomendado para 
   1. **Usando el Jenkinsfile equivocado**: Asegúrate de usar el Jenkinsfile adaptado para Windows (con comandos `bat` o `powershell` en lugar de `sh`)
   2. **Agente Docker en Windows**: Si estás usando un agente Docker dentro de Jenkins en Windows, necesitarás:
      - Usar "Jenkinsfile.docker-windows" específicamente creado para este escenario
-     - O usar "Jenkinsfile" actual que no intenta utilizar Docker como agente
+     - O usar el "Jenkinsfile" actual que utiliza PowerShell directamente
   3. **Problemas de PATH**: Asegúrate de que el PATH incluya la ruta a Terraform correctamente con separador ';' en lugar de ':'
 - En los comandos de línea continua en Windows, usa el carácter `^` en lugar de `\`
-- Si sigues teniendo problemas, considera ejecutar Jenkins en un contenedor Docker basado en Linux
+- Si sigues teniendo problemas, puedes usar alguna de estas alternativas:
+  - `Jenkinsfile.ps1`: Utiliza un script PowerShell dedicado para ejecutar Terraform (solución más robusta)
+  - `Jenkinsfile.full`: Versión completa con comandos `bat` específicos para Windows
+  - `Jenkinsfile.simple`: Versión minimalista para pruebas
+
+### Método recomendado para Windows
+
+Para entornos Windows, recomendamos utilizar el enfoque basado en PowerShell:
+
+1. Asegúrate de que Terraform está instalado y accesible en el PATH
+2. Usa el archivo `Jenkinsfile` (que llama al script `jenkins-terraform-windows.ps1`)
+3. Configura el job de Jenkins para usar este archivo
 
 ### Integración con AWS Lambda
 

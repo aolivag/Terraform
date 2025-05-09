@@ -9,15 +9,10 @@ pipeline {
     }
     
     stages {
-        stage('Checkout') {
+        stage('Verify Environment') {
             steps {
-                checkout scm
-            }
-        }
-        
-        stage('Test Environment') {
-            steps {
-                bat 'echo Verificando entorno Windows'
+                bat 'echo Environment verification'
+                bat 'terraform --version'
                 bat 'dir'
             }
         }
@@ -30,21 +25,21 @@ pipeline {
         
         stage('Terraform Plan') {
             when {
-                expression { params.TERRAFORM_ACTION != 'destroy' }
+                expression { return params.TERRAFORM_ACTION != 'destroy' }
             }
             steps {
                 bat """
                 terraform plan -out=tfplan ^
-                    -var="container_name=%CONTAINER_NAME%" ^
-                    -var="external_port=%EXTERNAL_PORT%" ^
-                    -var="image_name=%IMAGE_NAME%"
+                -var="container_name=${params.CONTAINER_NAME}" ^
+                -var="external_port=${params.EXTERNAL_PORT}" ^
+                -var="image_name=${params.IMAGE_NAME}"
                 """
             }
         }
         
         stage('Terraform Apply') {
             when {
-                expression { params.TERRAFORM_ACTION == 'apply' }
+                expression { return params.TERRAFORM_ACTION == 'apply' }
             }
             steps {
                 bat 'terraform apply -auto-approve tfplan'
@@ -53,14 +48,14 @@ pipeline {
         
         stage('Terraform Destroy') {
             when {
-                expression { params.TERRAFORM_ACTION == 'destroy' }
+                expression { return params.TERRAFORM_ACTION == 'destroy' }
             }
             steps {
                 bat """
                 terraform destroy -auto-approve ^
-                    -var="container_name=%CONTAINER_NAME%" ^
-                    -var="external_port=%EXTERNAL_PORT%" ^
-                    -var="image_name=%IMAGE_NAME%"
+                -var="container_name=${params.CONTAINER_NAME}" ^
+                -var="external_port=${params.EXTERNAL_PORT}" ^
+                -var="image_name=${params.IMAGE_NAME}"
                 """
             }
         }
