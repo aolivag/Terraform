@@ -3,6 +3,7 @@ pipeline {
         docker {
             image 'hashicorp/terraform:latest'
             args '-v ${WORKSPACE}:/workspace -w /workspace'
+            reuseNode true  // Permite reutilizar el nodo de Jenkins
         }
     }
     

@@ -63,30 +63,39 @@ También puedes crear un archivo `terraform.tfvars` para establecer valores pers
 
 Este proyecto incluye archivos de configuración para integrarse con Jenkins, permitiendo automatizar el despliegue de la infraestructura.
 
-### Configuración en Jenkins
+### Configuración en Jenkins (Windows)
 
 1. **Requisitos en Jenkins**:
    - Plugin de Pipeline instalado
    - Plugin de Docker instalado (si usas `Jenkinsfile.docker`)
-   - Terraform instalado en el agente Jenkins (para `Jenkinsfile`)
+   - Terraform instalado en el agente Jenkins y disponible en el PATH
+   - Para entornos Windows, usa `Jenkinsfile.windows` o el `Jenkinsfile` actualizado
 
 2. **Crear un nuevo pipeline en Jenkins**:
    - Crea un nuevo elemento de tipo Pipeline
    - En la sección "Pipeline", selecciona "Pipeline script from SCM"
    - Selecciona Git como SCM
    - Ingresa la URL de tu repositorio
-   - Establece "Jenkinsfile" como ruta del script
+   - Para Windows: 
+     - Usar "Jenkinsfile.windows" como ruta del script (basado en PowerShell)
+     - O usar "Jenkinsfile" que ha sido adaptado para usar comandos `bat` en lugar de `sh`
 
 3. **Variables de entorno**:
    - Puedes cargar las variables del archivo `jenkins.env` en la configuración de Jenkins
 
 ### Ejecución manual desde PowerShell
 
-También puedes ejecutar el script de PowerShell directamente:
+También puedes ejecutar el script de PowerShell directamente (recomendado para entornos Windows):
 
 ```powershell
 .\jenkins-terraform.ps1 -Action apply -ContainerName webapp -ExternalPort 8080 -ImageName nginx:alpine
 ```
+
+### Solución a errores comunes en Windows
+
+- Si encuentras el error "Cannot run program 'sh'", asegúrate de usar el Jenkinsfile adaptado para Windows (con comandos `bat` o `powershell` en lugar de `sh`)
+- Asegúrate de que el PATH incluya la ruta a Terraform correctamente con separador ';' en lugar de ':'
+- En los comandos de línea continua en Windows, usa el carácter `^` en lugar de `\`
 
 ### Integración con AWS Lambda
 
